@@ -13,6 +13,7 @@ object AppState {
 
     fun selectCategory(cat: ProductCategory) {
         selectedCategory.value = cat
+        setExpandedItem(-1L)
     }
 
     private val products = mutableStateOf(mutableListOf<Product>())
@@ -28,12 +29,43 @@ object AppState {
         products.value += prod
     }
 
-    private val basket = mutableStateOf(mutableListOf<Product>())
+    private val shoppingCart = mutableStateOf(mutableMapOf<Product, Int>())
 
-    fun getBasket() = basket.value
+    fun getShoppingCart() = shoppingCart.value
 
-    fun addToBasket(prod: Product) {
-        basket.value += prod
+    fun addToShoppingCart(prod: Product) {
+        if (!shoppingCartContains(prod)) {
+            shoppingCart.value[prod] = 1
+        } else {
+            shoppingCart.value[prod] = shoppingCart.value[prod]!! + 1
+        }
+    }
+
+    fun removeFromShoppingCart(prod: Product) {
+        if (shoppingCartContains(prod)) {
+            val amount = shoppingCart.value[prod]!!
+            if (amount == 1) {
+                shoppingCart.value.remove(prod)
+            } else {
+                shoppingCart.value[prod] = shoppingCart.value[prod]!! - 1
+            }
+        }
+    }
+
+    private fun shoppingCartContains(prod: Product): Boolean {
+        return prod in shoppingCart.value.keys
+    }
+
+    fun getShoppingCartAmountOf(prod: Product): Int {
+        return shoppingCart.value[prod] ?: 0
+    }
+
+    fun getShoppingCartTotal(): Float {
+        var total: Float = 0f
+        for ((prod, amount) in shoppingCart.value) {
+            total += prod.price * amount
+        }
+        return total
     }
 
     private val wishList = mutableStateOf(mutableListOf<Product>())
@@ -41,7 +73,20 @@ object AppState {
     fun getWishList() = wishList.value
 
     fun addToWishList(prod: Product) {
-        wishList.value += prod
+        if (!wishListContains(prod)) {
+            wishList.value += prod
+        }
+
+    }
+
+    fun removeFromWishList(prod: Product) {
+        if (wishListContains(prod)) {
+            wishList.value -= prod
+        }
+    }
+
+    fun wishListContains(prod: Product): Boolean {
+        return prod in wishList.value
     }
 
     private var expandedItem = mutableStateOf(-1L)

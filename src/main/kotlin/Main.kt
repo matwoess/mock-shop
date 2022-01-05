@@ -7,19 +7,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.filled.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import java.text.DecimalFormat
 
 fun main() = application {
     Window(
@@ -41,21 +42,18 @@ fun App() {
         Column {
             Header(
                 state = state,
-                toggleTheme = { state.setDarkMode(!state.getDarkMode()) },
-                expandWishList = { },
-                expandBasket = { })
+                toggleTheme = { state.setDarkMode(!state.getDarkMode()) }
+            )
             Body(state)
         }
     }
 }
 
 @Composable
-fun Header(state: AppState, toggleTheme: () -> Unit, expandWishList: () -> Unit, expandBasket: () -> Unit) {
+fun Header(state: AppState, toggleTheme: () -> Unit) {
     TopAppBar {
         Row(
-            modifier = Modifier
-                .background(MaterialTheme.colors.primary)
-                .padding(start = 16.dp, end = 16.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
 
@@ -67,29 +65,209 @@ fun Header(state: AppState, toggleTheme: () -> Unit, expandWishList: () -> Unit,
             Text(
                 text = R.appTitle.slice(1..R.appTitle.lastIndex),
                 style = MaterialTheme.typography.h5,
-                color = MaterialTheme.colors.onPrimary,
             )
             Row(
                 horizontalArrangement = Arrangement.End,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Button(
+                IconButton(
                     onClick = toggleTheme,
                 ) {
-                    Text("Theme")
+                    Icon(Icons.Default.Settings, contentDescription = "Toggle dark theme")
                 }
-                Button(
-                    onClick = expandWishList,
-                ) {
-                    Icon(Icons.Default.List, contentDescription = "Your wish list")
-                }
-                Button(
-                    onClick = expandBasket,
-                ) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = "Your shopping cart")
+                WishListPreviewButton(state)
+                ShoppingCartPreviewButton(state)
+            }
+        }
+    }
+}
+
+@Composable
+fun WishListPreviewButton(state: AppState) {
+    var expanded by remember { mutableStateOf(false) }
+    IconButton(
+        onClick = { expanded = !expanded },
+    ) {
+        Icon(Icons.Default.List, contentDescription = "Your wish list")
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            Column {
+                if (state.getWishList().isEmpty()) {
+                    Text("Currently no items in wish list.", Modifier.padding(16.dp))
+                } else {
+                    for (item in state.getWishList()) {
+                        WishListItem(
+                            item = item,
+                            wishListContains = { state.wishListContains(item) },
+                            onRemove = { state.removeFromWishList(item) },
+                            onMove = { state.removeFromWishList(item); state.addToShoppingCart(item) },
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
                 }
             }
         }
+    }
+}
+
+@Composable
+fun WishListItem(item: Product, wishListContains: () -> Boolean, onRemove: () -> Unit, onMove: () -> Unit) {
+    var inList by remember { mutableStateOf(true) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(start = 16.dp, end = 8.dp),
+    ) {
+        Text(
+            text = item.name,
+            style = if (!inList) TextStyle(textDecoration = TextDecoration.LineThrough) else TextStyle(),
+        )
+        Spacer(Modifier.width(16.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.End,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            IconButton(
+                onClick = {
+                    onRemove()
+                    inList = wishListContains()
+                },
+                enabled = inList,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Remove from List",
+                )
+            }
+            IconButton(
+                onClick = {
+                    onMove()
+                    inList = wishListContains()
+                },
+                enabled = inList,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ShoppingCart,
+                    contentDescription = "Move to Shopping Cart",
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ShoppingCartPreviewButton(state: AppState) {
+    var expanded by remember { mutableStateOf(false) }
+    var totalPrice by remember { mutableStateOf(state.getShoppingCartTotal()) }
+    val recalculateTotal = { totalPrice = state.getShoppingCartTotal() }
+    IconButton(
+        onClick = { expanded = !expanded; recalculateTotal() },
+    ) {
+        Icon(Icons.Default.ShoppingCart, contentDescription = "Your shopping cart")
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.padding(16.dp)
+        ) {
+            if (state.getShoppingCart().isEmpty()) {
+                Text("Currently no items in shopping cart.")
+            } else {
+                Column {
+                    for (item in state.getShoppingCart().keys) {
+                        ShoppingCartItem(
+                            item = item,
+                            getAmount = { state.getShoppingCartAmountOf(item) },
+                            onIncrease = { state.addToShoppingCart(item); recalculateTotal() },
+                            onDecrease = { state.removeFromShoppingCart(item); recalculateTotal() },
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    ShoppingCartTotal(totalPrice)
+                    Button(
+                        onClick = {},
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Checkout")
+                    }
+                }
+            }
+
+        }
+    }
+}
+
+@Composable
+fun ShoppingCartItem(
+    item: Product,
+    getAmount: () -> Int,
+    onIncrease: () -> Unit,
+    onDecrease: () -> Unit
+) {
+    var amount by remember { mutableStateOf(getAmount()) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(start = 16.dp, end = 8.dp)
+    ) {
+        Text(
+            text = "${amount}x",
+            style = MaterialTheme.typography.button
+        )
+        Spacer(Modifier.width(16.dp))
+        Text(
+            text = item.name,
+            style = if (amount <= 0) TextStyle(textDecoration = TextDecoration.LineThrough) else TextStyle(),
+        )
+        Spacer(Modifier.width(16.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            IconButton(
+                onClick = {
+                    onDecrease()
+                    amount = getAmount()
+                },
+                enabled = amount > 0,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Decrease amount",
+                )
+            }
+            IconButton(
+                onClick = {
+                    onIncrease()
+                    amount = getAmount()
+                },
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = "Increase amount",
+                )
+            }
+            Text("€%.2f,-".format(item.price * amount))
+        }
+    }
+}
+
+@Composable
+fun ShoppingCartTotal(totalPrice: Float) {
+    val formatter = DecimalFormat("#,###.00")
+    Divider()
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = "Total: €${formatter.format(totalPrice)},-",
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.h6
+        )
     }
 }
 
@@ -129,7 +307,7 @@ fun ProductCategories(state: AppState) {
     LazyColumn {
         this.items(ProductCategory.values()) { cat ->
             TextButton(
-                onClick = { state.selectCategory(cat); state.setExpandedItem(-1L) },
+                onClick = { state.selectCategory(cat) },
             ) {
                 if (state.getCurrentCategory() == cat) {
                     Text(cat.catName, style = MaterialTheme.typography.h6)
@@ -157,7 +335,7 @@ fun Main(state: AppState) {
                     state = state,
                     onExpand = { AppState.setExpandedItem(it.productId) },
                     addToWishList = { AppState.addToWishList(it) },
-                    addToBasket = { AppState.addToBasket(it) },
+                    addToShoppingCart = { AppState.addToShoppingCart(it) },
                 )
                 Spacer(Modifier.height(8.dp))
             }
@@ -171,7 +349,7 @@ fun ProductCard(
     state: AppState,
     onExpand: () -> Unit,
     addToWishList: () -> Unit,
-    addToBasket: () -> Unit,
+    addToShoppingCart: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(Modifier
@@ -199,7 +377,7 @@ fun ProductCard(
                             Text("Add to Wish List")
                         }
                         Button(
-                            onClick = addToBasket,
+                            onClick = addToShoppingCart,
                             colors = ButtonDefaults.buttonColors(MaterialTheme.colors.secondary),
                             modifier = Modifier.fillMaxWidth()
                         ) {
