@@ -184,13 +184,14 @@ fun ShoppingCartPreviewButton(state: AppState) {
                         )
                         Spacer(Modifier.height(8.dp))
                     }
+                    Divider()
                     ShoppingCartTotal(totalPrice)
-                    Button(
-                        onClick = {},
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Checkout")
-                    }
+                    Checkout(
+                        itemCount = state.getShoppingCartCount(),
+                        totalPrice = totalPrice,
+                        onConfirm = { state.buyAllItems(); expanded = false },
+                        onDismiss = {},
+                    )
                 }
             }
 
@@ -220,7 +221,6 @@ fun ShoppingCartItem(
             style = if (amount <= 0) TextStyle(textDecoration = TextDecoration.LineThrough) else TextStyle(),
         )
         Spacer(Modifier.width(16.dp))
-
         Row(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
@@ -234,7 +234,7 @@ fun ShoppingCartItem(
                 enabled = amount > 0,
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.Default.ArrowBack, // TODO
                     contentDescription = "Decrease amount",
                 )
             }
@@ -245,29 +245,94 @@ fun ShoppingCartItem(
                 },
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowForward,
+                    imageVector = Icons.Default.ArrowForward, // TODO
                     contentDescription = "Increase amount",
                 )
             }
-            Text("€%.2f,-".format(item.price * amount))
+            Text(formatPrice(item.price * amount))
         }
     }
 }
 
 @Composable
 fun ShoppingCartTotal(totalPrice: Float) {
-    val formatter = DecimalFormat("#,###.00")
-    Divider()
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(
-            text = "Total: €${formatter.format(totalPrice)},-",
+            text = "Total: ${formatPrice(totalPrice)}",
             modifier = Modifier.padding(16.dp),
             style = MaterialTheme.typography.h6
         )
+    }
+}
+
+fun formatPrice(price: Float): String {
+    val formatter = DecimalFormat("#,###.00")
+    return "€${formatter.format(price)},-"
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun Checkout(itemCount: Int, totalPrice: Float, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    Column {
+        val showDialog = remember { mutableStateOf(false) }
+
+        Button(
+            onClick = { showDialog.value = true },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Checkout")
+        }
+
+        if (showDialog.value) {
+            AlertDialog(
+                modifier = Modifier.width(600.dp),
+                onDismissRequest = {
+                    showDialog.value = false
+                },
+                title = {
+                    Text(text = "Confirm payment")
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "Please confirm buying these $itemCount items for a total amount of ${
+                                formatPrice(
+                                    totalPrice
+                                )
+                            }",
+                            style = MaterialTheme.typography.h6,
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Shipment will be made to the default address.",
+                            style = MaterialTheme.typography.subtitle1
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showDialog.value = false
+                            onConfirm()
+                        }) {
+                        Text("Confirm Payment")
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = {
+                            showDialog.value = false
+                            onDismiss()
+                        }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -369,7 +434,7 @@ fun ProductCard(
                 Spacer(Modifier.height(8.dp))
                 Text(prod.description)
                 Spacer(Modifier.height(8.dp))
-                Text("€ ${"%.2f".format(prod.price)},-")
+                Text(formatPrice(prod.price))
                 if (state.getExpandedItem() == prod.productId) {
                     Spacer(Modifier.height(8.dp))
                     Column(modifier = Modifier.fillMaxWidth()) {

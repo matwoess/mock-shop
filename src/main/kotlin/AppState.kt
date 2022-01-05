@@ -68,6 +68,19 @@ object AppState {
         return total
     }
 
+    fun getShoppingCartCount(): Int {
+        return shoppingCart.value.values.sum()
+    }
+
+    fun buyAllItems() {
+        // TODO?
+        clearShoppingCart()
+    }
+
+    private fun clearShoppingCart() {
+        shoppingCart.value.clear()
+    }
+
     private val wishList = mutableStateOf(mutableListOf<Product>())
 
     fun getWishList() = wishList.value
