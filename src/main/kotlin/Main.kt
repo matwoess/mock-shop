@@ -299,9 +299,14 @@ fun Checkout(itemCount: Int, totalPrice: Float, onConfirm: () -> Unit, onDismiss
 
         if (showDialog) {
             AlertDialog(
-                modifier = Modifier.width(700.dp),
+                modifier = Modifier.width(700.dp).padding(16.dp),
                 onDismissRequest = { showDialog = false },
-                title = { Text(text = "Confirm payment") },
+                title = {
+                    Text(
+                        text = "Confirm payment",
+                        style = MaterialTheme.typography.h5
+                    )
+                },
                 text = {
                     Column {
                         Text(
