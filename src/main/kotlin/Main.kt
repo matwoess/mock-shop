@@ -30,6 +30,7 @@ fun main() = application {
         title = "Mock-Shop",
         icon = painterResource("m_letter.svg")
     ) {
+        DemoData.fillProducts(AppState)
         App()
     }
 }
@@ -38,8 +39,6 @@ fun main() = application {
 @Preview
 fun App() {
     val state = remember { AppState }
-    DemoData.fillProducts(state)
-
     AppTheme(state.getDarkMode()) {
         Column {
             Header(
