@@ -2,10 +2,28 @@ import androidx.compose.runtime.mutableStateOf
 
 object AppState {
     private var darkMode = mutableStateOf(false)
+
     fun getDarkMode() = darkMode.value
+
     fun setDarkMode(on: Boolean) {
         darkMode.value = on
     }
+
+
+
+    private var expandedItem = mutableStateOf(-1L)
+
+    fun getExpandedItem() = expandedItem.value
+
+    fun setExpandedItem(id: Long) {
+        if (expandedItem.value == id) {
+            expandedItem.value = -1
+        } else {
+            expandedItem.value = id
+        }
+    }
+
+
 
     private val selectedCategory = mutableStateOf(ProductCategory.ALL)
 
@@ -15,6 +33,8 @@ object AppState {
         selectedCategory.value = cat
         setExpandedItem(-1L)
     }
+
+
 
     private val products = mutableStateOf(mutableListOf<Product>())
 
@@ -28,6 +48,8 @@ object AppState {
     fun addProduct(prod: Product) {
         products.value += prod
     }
+
+
 
     private val shoppingCart = mutableStateOf(mutableMapOf<Product, Int>())
 
@@ -61,7 +83,7 @@ object AppState {
     }
 
     fun getShoppingCartTotal(): Float {
-        var total: Float = 0f
+        var total = 0f
         for ((prod, amount) in shoppingCart.value) {
             total += prod.price * amount
         }
@@ -73,7 +95,7 @@ object AppState {
     }
 
     fun buyAllItems() {
-        // TODO?
+        // (process payment and ship items)
         clearShoppingCart()
     }
 
@@ -81,36 +103,23 @@ object AppState {
         shoppingCart.value.clear()
     }
 
+
+
     private val wishList = mutableStateOf(mutableListOf<Product>())
 
     fun getWishList() = wishList.value
+
+    private fun wishListContains(prod: Product) = prod in wishList.value
 
     fun addToWishList(prod: Product) {
         if (!wishListContains(prod)) {
             wishList.value += prod
         }
-
     }
 
     fun removeFromWishList(prod: Product) {
         if (wishListContains(prod)) {
             wishList.value -= prod
-        }
-    }
-
-    fun wishListContains(prod: Product): Boolean {
-        return prod in wishList.value
-    }
-
-    private var expandedItem = mutableStateOf(-1L)
-
-    fun getExpandedItem() = expandedItem.value
-
-    fun setExpandedItem(id: Long) {
-        if (expandedItem.value == id) {
-            expandedItem.value = -1
-        } else {
-            expandedItem.value = id
         }
     }
 }

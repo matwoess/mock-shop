@@ -1,3 +1,5 @@
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,7 +27,7 @@ import java.text.DecimalFormat
 fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
-        title = R.appTitle,
+        title = "Mock-Shop",
         icon = painterResource("m_letter.svg")
     ) {
         App()
@@ -51,32 +53,31 @@ fun App() {
 
 @Composable
 fun Header(state: AppState, toggleTheme: () -> Unit) {
-    TopAppBar {
+    TopAppBar(elevation = 8.dp) {
         Row(
             modifier = Modifier.padding(start = 16.dp, end = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
-            Image(
-                painter = painterResource("m_letter.svg"),
-                contentDescription = "App logo",
-                modifier = Modifier.size(24.dp)
-            )
-            Text(
-                text = R.appTitle.slice(1..R.appTitle.lastIndex),
-                style = MaterialTheme.typography.h5,
-            )
+            Row {
+                Image(
+                    painter = painterResource("m_letter.svg"),
+                    contentDescription = "App logo",
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "ock-Shop",
+                    style = MaterialTheme.typography.h5,
+                )
+            }
             Row(
                 horizontalArrangement = Arrangement.End,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                IconButton(
-                    onClick = toggleTheme,
-                ) {
+                ShoppingCartPreviewButton(state)
+                WishListPreviewButton(state)
+                IconButton(onClick = toggleTheme) {
                     Icon(Icons.Default.Settings, contentDescription = "Toggle dark theme")
                 }
-                WishListPreviewButton(state)
-                ShoppingCartPreviewButton(state)
             }
         }
     }
@@ -95,17 +96,18 @@ fun WishListPreviewButton(state: AppState) {
         ) {
             Column {
                 if (state.getWishList().isEmpty()) {
-                    Text("Currently no items in wish list.", Modifier.padding(16.dp))
+                    Text(
+                        text = "Currently no items in wish list.",
+                        modifier = Modifier.padding(16.dp),
+                    )
                 } else {
                     for (item in state.getWishList()) {
                         WishListItem(
                             item = item,
-                            wishListContains = { state.wishListContains(item) },
                             onRemove = { state.removeFromWishList(item) },
                             onMove = { state.removeFromWishList(item); state.addToShoppingCart(item) },
                         )
                     }
-                    Spacer(Modifier.height(8.dp))
                 }
             }
         }
@@ -113,7 +115,7 @@ fun WishListPreviewButton(state: AppState) {
 }
 
 @Composable
-fun WishListItem(item: Product, wishListContains: () -> Boolean, onRemove: () -> Unit, onMove: () -> Unit) {
+fun WishListItem(item: Product, onRemove: () -> Unit, onMove: () -> Unit) {
     var inList by remember { mutableStateOf(true) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -121,20 +123,22 @@ fun WishListItem(item: Product, wishListContains: () -> Boolean, onRemove: () ->
     ) {
         Text(
             text = item.name,
-            style = if (!inList) TextStyle(textDecoration = TextDecoration.LineThrough) else TextStyle(),
+            style = if (!inList) TextStyle(
+                fontSize = MaterialTheme.typography.h6.fontSize,
+                textDecoration = TextDecoration.LineThrough
+            ) else MaterialTheme.typography.h6,
         )
         Spacer(Modifier.width(16.dp))
-
         Row(
             horizontalArrangement = Arrangement.End,
             modifier = Modifier.fillMaxWidth(),
         ) {
             IconButton(
+                enabled = inList,
                 onClick = {
                     onRemove()
-                    inList = wishListContains()
+                    inList = false
                 },
-                enabled = inList,
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
@@ -142,11 +146,11 @@ fun WishListItem(item: Product, wishListContains: () -> Boolean, onRemove: () ->
                 )
             }
             IconButton(
+                enabled = inList,
                 onClick = {
                     onMove()
-                    inList = wishListContains()
+                    inList = false
                 },
-                enabled = inList,
             ) {
                 Icon(
                     imageVector = Icons.Default.ShoppingCart,
@@ -194,7 +198,6 @@ fun ShoppingCartPreviewButton(state: AppState) {
                     )
                 }
             }
-
         }
     }
 }
@@ -209,47 +212,54 @@ fun ShoppingCartItem(
     var amount by remember { mutableStateOf(getAmount()) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(start = 16.dp, end = 8.dp)
+        modifier = Modifier.padding(end = 8.dp)
     ) {
+        IconButton(
+            enabled = amount > 0,
+            onClick = {
+                onDecrease()
+                amount = getAmount()
+            }
+        ) {
+            Icon(
+                painterResource("minus.svg"),
+                contentDescription = "Decrease amount",
+            )
+        }
+        IconButton(
+            onClick = {
+                onIncrease()
+                amount = getAmount()
+            }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Increase amount"
+            )
+        }
+        Spacer(Modifier.width(24.dp))
         Text(
             text = "${amount}x",
-            style = MaterialTheme.typography.button
+            style = MaterialTheme.typography.h6
         )
         Spacer(Modifier.width(16.dp))
         Text(
             text = item.name,
-            style = if (amount <= 0) TextStyle(textDecoration = TextDecoration.LineThrough) else TextStyle(),
+            style = if (amount <= 0) TextStyle(
+                fontSize = MaterialTheme.typography.h6.fontSize,
+                textDecoration = TextDecoration.LineThrough
+            ) else MaterialTheme.typography.h6,
         )
-        Spacer(Modifier.width(16.dp))
+        Spacer(Modifier.width(24.dp))
         Row(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            IconButton(
-                onClick = {
-                    onDecrease()
-                    amount = getAmount()
-                },
-                enabled = amount > 0,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack, // TODO
-                    contentDescription = "Decrease amount",
-                )
-            }
-            IconButton(
-                onClick = {
-                    onIncrease()
-                    amount = getAmount()
-                },
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowForward, // TODO
-                    contentDescription = "Increase amount",
-                )
-            }
-            Text(formatPrice(item.price * amount))
+            Text(
+                text = formatPrice(item.price * amount),
+                style = MaterialTheme.typography.h6,
+            )
         }
     }
 }
@@ -264,45 +274,39 @@ fun ShoppingCartTotal(totalPrice: Float) {
         Text(
             text = "Total: ${formatPrice(totalPrice)}",
             modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.h6
+            style = MaterialTheme.typography.h5
         )
     }
 }
 
 fun formatPrice(price: Float): String {
     val formatter = DecimalFormat("#,###.00")
-    return "€${formatter.format(price)},-"
+    return "€ ${formatter.format(price)},-"
 }
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun Checkout(itemCount: Int, totalPrice: Float, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     Column {
-        val showDialog = remember { mutableStateOf(false) }
+        var showDialog by remember { mutableStateOf(false) }
 
         Button(
-            onClick = { showDialog.value = true },
+            onClick = { showDialog = true },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Checkout")
         }
 
-        if (showDialog.value) {
+        if (showDialog) {
             AlertDialog(
-                modifier = Modifier.width(600.dp),
-                onDismissRequest = {
-                    showDialog.value = false
-                },
-                title = {
-                    Text(text = "Confirm payment")
-                },
+                modifier = Modifier.width(700.dp),
+                onDismissRequest = { showDialog = false },
+                title = { Text(text = "Confirm payment") },
                 text = {
                     Column {
                         Text(
                             text = "Please confirm buying these $itemCount items for a total amount of ${
-                                formatPrice(
-                                    totalPrice
-                                )
+                                formatPrice(totalPrice)
                             }",
                             style = MaterialTheme.typography.h6,
                         )
@@ -316,7 +320,7 @@ fun Checkout(itemCount: Int, totalPrice: Float, onConfirm: () -> Unit, onDismiss
                 confirmButton = {
                     Button(
                         onClick = {
-                            showDialog.value = false
+                            showDialog = false
                             onConfirm()
                         }) {
                         Text("Confirm Payment")
@@ -325,7 +329,7 @@ fun Checkout(itemCount: Int, totalPrice: Float, onConfirm: () -> Unit, onDismiss
                 dismissButton = {
                     Button(
                         onClick = {
-                            showDialog.value = false
+                            showDialog = false
                             onDismiss()
                         }) {
                         Text("Cancel")
@@ -357,7 +361,7 @@ fun LeftSideBar(state: AppState) {
             modifier = Modifier.fillMaxHeight().padding(16.dp)
         ) {
             Text(
-                text = R.categoriesHeader,
+                text = "Categories:",
                 style = MaterialTheme.typography.h5,
                 color = MaterialTheme.colors.onBackground,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -370,7 +374,7 @@ fun LeftSideBar(state: AppState) {
 @Composable
 fun ProductCategories(state: AppState) {
     LazyColumn {
-        this.items(ProductCategory.values()) { cat ->
+        items(ProductCategory.values()) { cat ->
             TextButton(
                 onClick = { state.selectCategory(cat) },
             ) {
@@ -394,13 +398,13 @@ fun Main(state: AppState) {
         LazyColumn(
             modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(all = 8.dp),
         ) {
-            items(state.getProductsByCategory(state.getCurrentCategory())) {
+            items(state.getProductsByCategory(state.getCurrentCategory())) { product ->
                 ProductCard(
-                    prod = it,
-                    state = state,
-                    onExpand = { AppState.setExpandedItem(it.productId) },
-                    addToWishList = { AppState.addToWishList(it) },
-                    addToShoppingCart = { AppState.addToShoppingCart(it) },
+                    prod = product,
+                    isExpanded = state.getExpandedItem() == product.productId,
+                    onExpand = { AppState.setExpandedItem(product.productId) },
+                    addToWishList = { AppState.addToWishList(product) },
+                    addToShoppingCart = { AppState.addToShoppingCart(product) }
                 )
                 Spacer(Modifier.height(8.dp))
             }
@@ -411,15 +415,20 @@ fun Main(state: AppState) {
 @Composable
 fun ProductCard(
     prod: Product,
-    state: AppState,
+    isExpanded: Boolean,
     onExpand: () -> Unit,
     addToWishList: () -> Unit,
     addToShoppingCart: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    val elevation by animateDpAsState(if (isExpanded) 8.dp else 0.dp)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = elevation,
+    ) {
         Row(Modifier
             .clickable { onExpand() }
-            .padding(all = 16.dp)) {
+            .padding(all = 16.dp)
+        ) {
             Image(
                 painter = painterResource(prod.image),
                 contentDescription = "Product image",
@@ -435,10 +444,13 @@ fun ProductCard(
                 Text(prod.description)
                 Spacer(Modifier.height(8.dp))
                 Text(formatPrice(prod.price))
-                if (state.getExpandedItem() == prod.productId) {
+                AnimatedVisibility(isExpanded) {
                     Spacer(Modifier.height(8.dp))
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        Button(onClick = addToWishList, modifier = Modifier.fillMaxWidth()) {
+                        Button(
+                            onClick = addToWishList,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
                             Text("Add to Wish List")
                         }
                         Button(
