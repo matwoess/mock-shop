@@ -215,16 +215,22 @@ fun ShoppingCartItem(
         modifier = Modifier.padding(end = 8.dp)
     ) {
         IconButton(
-            enabled = amount > 0,
             onClick = {
                 onDecrease()
                 amount = getAmount()
             }
         ) {
-            Icon(
-                painterResource("minus.svg"),
-                contentDescription = "Decrease amount",
-            )
+            if (amount > 1) {
+                Icon(
+                    painter = painterResource("minus.svg"),
+                    contentDescription = "Decrease amount",
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Remove Item"
+                )
+            }
         }
         IconButton(
             onClick = {
@@ -245,10 +251,7 @@ fun ShoppingCartItem(
         Spacer(Modifier.width(16.dp))
         Text(
             text = item.name,
-            style = if (amount <= 0) TextStyle(
-                fontSize = MaterialTheme.typography.h6.fontSize,
-                textDecoration = TextDecoration.LineThrough
-            ) else MaterialTheme.typography.h6,
+            style = MaterialTheme.typography.h6,
         )
         Spacer(Modifier.width(24.dp))
         Row(
