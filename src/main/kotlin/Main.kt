@@ -19,8 +19,11 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import java.text.DecimalFormat
 
@@ -28,7 +31,11 @@ fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
         title = "Mock-Shop",
-        icon = painterResource("m_letter.svg")
+        icon = painterResource("m_letter.svg"),
+        state = WindowState(
+            position = WindowPosition.Aligned(Alignment.Center),
+            size = DpSize(1000.dp, 800.dp)
+        ),
     ) {
         DemoData.fillProducts(AppState)
         App()
@@ -301,7 +308,7 @@ fun Checkout(itemCount: Int, totalPrice: Float, onConfirm: () -> Unit, onDismiss
 
         if (showDialog) {
             AlertDialog(
-                modifier = Modifier.width(700.dp).padding(16.dp),
+                modifier = Modifier.width(600.dp).padding(16.dp),
                 onDismissRequest = { showDialog = false },
                 title = {
                     Text(
