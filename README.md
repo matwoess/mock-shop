@@ -17,16 +17,16 @@ It originated as a free-to-choose project assignment for the JKU course "Program
 ### Screenshots
 
 Main app view with an expanded item and empty wish list (light theme):    
-[main view, empty wish list, light theme](screenshots/main_light.png)
+![main view, empty wish list, light theme](screenshots/main_light.png)
 
 Main app view with an expanded item and empty shopping cart (dark theme):    
-[main view, empty shopping cart, dark theme](screenshots/main_dark.png)
+![main view, empty shopping cart, dark theme](screenshots/main_dark.png)
 
 Manage shopping list in a button-dropdown-preview:    
-[shopping cart dropdown](screenshots/shopping_cart.png)
+![shopping cart dropdown](screenshots/shopping_cart.png)
 
 The wish list with an item already deleted:    
-[wish list dropdown](screenshots/wish_list.png)
+![wish list dropdown](screenshots/wish_list.png)
 
 The alert dialog to confirm payment and shipping:    
-[checkout dialog to confirm order](screenshots/checkout.png)
+![checkout dialog to confirm order](screenshots/checkout.png)
